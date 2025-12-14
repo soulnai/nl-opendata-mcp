@@ -1,4 +1,4 @@
-# 🇳🇱 NL OpenData MCP Server
+# NL OpenData MCP Server
 
 A comprehensive **Model Context Protocol (MCP)** server for accessing Dutch government open data from [CBS (Centraal Bureau voor de Statistiek)](https://www.cbs.nl/) and [data.overheid.nl](https://data.overheid.nl/).
 
