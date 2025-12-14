@@ -52,15 +52,9 @@ async def cbs_list_local_datasets(ctx: Context) -> str:
     if not files:
         return "No CSV files found in downloads directory. Use cbs_save_dataset first to download data."
 
-    output = ["AVAILABLE LOCAL DATASETS", "=" * 40]
-    output.append(f"Directory: {os.path.abspath(downloads_path)}")
-    output.append("")
-
+    output = []
     for f in sorted(files, key=lambda x: x['filename']):
-        output.append(f"- {f['filename']} ({f['size_kb']} KB, ~{f['rows']} rows)")
-
-    output.append("")
-    output.append("Use cbs_analyze_local_dataset with dataset_name='<filename>' to analyze.")
+        output.append(f"{f['filename']} ({f['size_kb']} KB, ~{f['rows']} rows)")
 
     return "\n".join(output)
 
@@ -182,7 +176,7 @@ async def cbs_analyze_remote_dataset(ctx: Context, params: AnalyzeRemoteInput) -
             old_stdout = sys.stdout
             redirected_output = sys.stdout = StringIO()
 
-            exec(code_to_exec, {}, local_env)
+            exec(code_to_exec, local_env)
 
             sys.stdout = old_stdout
             output = redirected_output.getvalue()
@@ -300,7 +294,7 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
             old_stdout = sys.stdout
             redirected_output = sys.stdout = StringIO()
 
-            exec(code_to_exec, {}, local_env)
+            exec(code_to_exec, local_env)
 
             sys.stdout = old_stdout
             output = redirected_output.getvalue()
