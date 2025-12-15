@@ -25,6 +25,7 @@ from nl_opendata_mcp.models import (
     QueryMetadataInput,
     QueryDatasetInput,
     GetMetadataInput,
+    DimensionLookupInput,
 )
 
 # Import all tool implementations
@@ -39,6 +40,7 @@ from nl_opendata_mcp.tools.metadata import (
     cbs_get_dataset_metadata as _cbs_get_dataset_metadata,
     cbs_query_dataset_metadata as _cbs_query_dataset_metadata,
     cbs_get_metadata as _cbs_get_metadata,
+    cbs_get_dimension_values as _cbs_get_dimension_values,
 )
 from nl_opendata_mcp.tools.query import (
     cbs_query_dataset as _cbs_query_dataset,
@@ -274,6 +276,16 @@ if settings.use_python_analysis:
                 - dataset_id (str): Dataset ID (e.g., '85313NED')
                 - analysis_code (str, optional): Python code to execute on 'df' DataFrame
                 - script_path (str, optional): Path to .py file with analysis code (preferred for complex analysis)
+                - filter (str, optional): OData filter to apply BEFORE fetching (e.g., "Perioden eq '2023JJ00'")
+                - select (List[str], optional): Column names to fetch (reduces data transfer)
+                - top (int): Maximum records to fetch (default: 10000)
+                - translate (bool): Translate coded values to human-readable text (default: True)
+
+        IMPORTANT - Translation Behavior:
+            When translate=True (default), dimension values are converted to human-readable text.
+            - OData filter uses RAW codes: filter="Luchthavens eq 'A043591'"
+            - DataFrame contains TRANSLATED values: df['Luchthavens'] == 'Eindhoven Airport'
+            Use cbs_get_dimension_values to find the correct codes for filtering.
 
         Returns:
             str: Analysis result. Print output or assign to 'result' variable.
@@ -471,6 +483,44 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
         - Get gender categories: metadata_type="custom", custom_endpoint="Geslacht"
     """
     return await _cbs_get_metadata(ctx, params)
+
+
+@mcp.tool(
+    name="cbs_get_dimension_values",
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True
+    }
+)
+async def cbs_get_dimension_values(ctx: Context, params: DimensionLookupInput) -> str:
+    """
+    Gets all possible values for a dimension with their codes and descriptions.
+
+    Use this tool to find the correct codes for OData filtering. CBS datasets use
+    coded values (e.g., 'A043591') that map to human-readable names (e.g., 'Eindhoven Airport').
+
+    Args:
+        params: DimensionLookupInput containing:
+            - dataset_id (str): Dataset ID (e.g., '37478hvv')
+            - dimension_name (str): Dimension name from DataProperties (e.g., 'Luchthavens', 'Geslacht')
+
+    Returns:
+        str: Table of dimension values with Code, Title, and Description columns.
+             Use the 'Code' column values for OData filters.
+
+    Example:
+        Input: dataset_id="37478hvv", dimension_name="Luchthavens"
+        Then use in filter: filter="Luchthavens eq 'A043591'"
+
+    Common dimension names:
+        - Geslacht: Gender (Mannen, Vrouwen, Totaal)
+        - Perioden: Time periods (2023JJ00 = year, 2023MM01 = month)
+        - RegioS: Regions
+        - Leeftijd: Age groups
+    """
+    return await _cbs_get_dimension_values(ctx, params)
 
 
 @mcp.tool(

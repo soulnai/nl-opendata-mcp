@@ -69,6 +69,10 @@ class AnalyzeRemoteInput(BaseModel):
     dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
     analysis_code: Optional[str] = Field(default=None, description="Python code to execute on 'df' DataFrame (optional if script_path is used)")
     script_path: Optional[str] = Field(default=None, description="Path to a .py file containing the analysis code (preferred for complex analysis)")
+    filter: Optional[str] = Field(default=None, description="OData filter to apply before fetching (e.g., \"Perioden eq '2023JJ00'\")")
+    select: Optional[List[str]] = Field(default=None, description="Column names to fetch (reduces data transfer)")
+    top: int = Field(default=10000, ge=1, le=100000, description="Maximum records to fetch (default: 10000)")
+    translate: bool = Field(default=True, description="Translate coded dimension values to human-readable text")
 
 
 class AnalyzeLocalInput(BaseModel):
@@ -112,3 +116,10 @@ class GetMetadataInput(BaseModel):
     dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
     metadata_type: MetadataType = Field(default=MetadataType.INFO, description="Type of metadata: 'info', 'structure', 'endpoints', or 'custom'")
     custom_endpoint: Optional[str] = Field(default=None, description="Custom metadata endpoint name (only used when metadata_type='custom')")
+
+
+class DimensionLookupInput(BaseModel):
+    """Input model for looking up dimension values."""
+    model_config = ConfigDict(str_strip_whitespace=True)
+    dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
+    dimension_name: str = Field(..., min_length=1, description="Dimension name (e.g., 'Geslacht', 'Perioden', 'RegioS')")

@@ -7,7 +7,7 @@ import pandas as pd
 from fastmcp import Context
 
 from ..config import get_settings
-from ..models import DatasetIdInput, QueryMetadataInput, GetMetadataInput, MetadataType
+from ..models import DatasetIdInput, QueryMetadataInput, GetMetadataInput, MetadataType, DimensionLookupInput
 from ..services.http_client import fetch_with_retry
 from ..utils import handle_http_error, validate_dataset_id, ValidationError
 
@@ -198,3 +198,92 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
 
     except Exception as e:
         return handle_http_error(e, "cbs_get_metadata")
+
+
+async def cbs_get_dimension_values(ctx: Context, params: DimensionLookupInput) -> str:
+    """
+    Gets all possible values for a dimension with their codes and descriptions.
+
+    Use this tool to find the correct codes for OData filtering. CBS datasets use
+    coded values (e.g., 'A043591') that map to human-readable names (e.g., 'Eindhoven Airport').
+
+    Args:
+        params: DimensionLookupInput containing:
+            - dataset_id (str): Dataset ID (e.g., '37478hvv')
+            - dimension_name (str): Dimension name from DataProperties (e.g., 'Luchthavens', 'Geslacht', 'Perioden')
+
+    Returns:
+        str: Table of dimension values with Code, Title, and Description columns.
+             Use the 'Code' (Key) column values for OData filters.
+
+    Example:
+        Input: dataset_id="37478hvv", dimension_name="Luchthavens"
+        Output:
+            Code       | Title                    | Description
+            -----------|--------------------------|-------------
+            A043591    | Eindhoven Airport        |
+            A043590    | Amsterdam Airport Schiphol|
+
+        Then use in filter: filter="Luchthavens eq 'A043591'"
+
+    Common dimension names:
+        - Geslacht: Gender (Mannen, Vrouwen, Totaal)
+        - Perioden: Time periods (2023JJ00 = year, 2023MM01 = month)
+        - RegioS: Regions
+        - Leeftijd: Age groups
+    """
+    try:
+        dataset_id = validate_dataset_id(params.dataset_id)
+    except ValidationError as e:
+        return e.to_error_string()
+
+    dimension_name = params.dimension_name.strip()
+    if not dimension_name:
+        return "Error: dimension_name cannot be empty"
+
+    url = f"{settings.data_base_url}/{dataset_id}/{dimension_name}?$format=json"
+    ctx.info(f"Getting dimension values for {dataset_id}/{dimension_name}")
+    logger.info(f"Getting dimension values: {dataset_id}/{dimension_name}")
+
+    try:
+        response = await fetch_with_retry(url)
+        data = response.json()
+
+        # Handle both direct array and 'value' wrapper
+        if isinstance(data, dict):
+            records = data.get('value', [])
+        else:
+            records = data
+
+        if not records:
+            return f"No values found for dimension '{dimension_name}'. Check the dimension name using cbs_get_metadata with metadata_type='structure'."
+
+        # Extract relevant columns
+        output_records = []
+        for r in records:
+            output_records.append({
+                'Code': r.get('Key', r.get('Identifier', '')),
+                'Title': r.get('Title', ''),
+                'Description': r.get('Description', '')[:100] if r.get('Description') else ''
+            })
+
+        df = pd.DataFrame(output_records)
+
+        # Format output
+        header = [
+            f"DIMENSION VALUES: {dimension_name}",
+            f"Dataset: {dataset_id}",
+            f"Total values: {len(df)}",
+            "-" * 60,
+            "",
+            "Use 'Code' values for OData filters: filter=\"{dim} eq '{code}'\"",
+            "",
+        ]
+
+        return "\n".join(header) + df.to_string(index=False)
+
+    except Exception as e:
+        error_msg = str(e)
+        if "404" in error_msg or "Not Found" in error_msg:
+            return f"Dimension '{dimension_name}' not found in dataset '{dataset_id}'.\n\nTIP: Use cbs_get_metadata with metadata_type='structure' to see available dimensions (look for Type='Dimension')."
+        return handle_http_error(e, "cbs_get_dimension_values")

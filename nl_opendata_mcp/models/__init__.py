@@ -13,6 +13,7 @@ from .inputs import (
     OutputFormat,
     MetadataType,
     GetMetadataInput,
+    DimensionLookupInput,
 )
 
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "OutputFormat",
     "MetadataType",
     "GetMetadataInput",
+    "DimensionLookupInput",
 ]
