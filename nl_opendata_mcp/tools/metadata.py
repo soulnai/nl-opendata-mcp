@@ -7,7 +7,7 @@ import pandas as pd
 from fastmcp import Context
 
 from ..config import get_settings
-from ..models import DatasetIdInput, QueryMetadataInput, GetMetadataInput, MetadataType, DimensionLookupInput
+from ..models import GetMetadataInput, MetadataType
 from ..services.http_client import fetch_with_retry
 from ..utils import handle_http_error, validate_dataset_id, ValidationError
 
@@ -15,128 +15,9 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-async def cbs_get_dataset_info(ctx: Context, params: DatasetIdInput) -> str:
-    """
-    Gets detailed information and description for a specific dataset (TableInfos).
-
-    Args:
-        params: DatasetIdInput containing:
-            - dataset_id (str): Dataset ID (e.g., '85313NED')
-
-    Returns:
-        str: CSV string containing dataset metadata
-    """
-    try:
-        dataset_id = validate_dataset_id(params.dataset_id)
-    except ValidationError as e:
-        return e.to_error_string()
-
-    url = f"{settings.data_base_url}/{dataset_id}/TableInfos?$format=json"
-    ctx.info(f"Getting info for dataset {dataset_id}: {url}")
-    logger.info(f"Getting dataset info: {dataset_id}")
-
-    try:
-        response = await fetch_with_retry(url)
-        data = response.json().get('value', [])
-        if not data:
-            return "No info found."
-        df = pd.DataFrame(data)
-        return df.to_csv(index=False)
-    except Exception as e:
-        return handle_http_error(e, "cbs_get_dataset_info")
-
-
-async def cbs_get_table_structure(ctx: Context, params: DatasetIdInput) -> str:
-    """
-    Gets the structure (columns and data types) of a dataset (DataProperties).
-
-    Args:
-        params: DatasetIdInput containing:
-            - dataset_id (str): Dataset ID (e.g., '85313NED')
-
-    Returns:
-        str: CSV string containing column definitions (Key, Type, Title, Description)
-    """
-    try:
-        dataset_id = validate_dataset_id(params.dataset_id)
-    except ValidationError as e:
-        return e.to_error_string()
-
-    url = f"{settings.data_base_url}/{dataset_id}/DataProperties?$format=json"
-    ctx.info(f"Getting structure for dataset {dataset_id}: {url}")
-    logger.info(f"Getting table structure: {dataset_id}")
-
-    try:
-        response = await fetch_with_retry(url)
-        data = response.json().get('value', [])
-        if not data:
-            return "No table structure found."
-        df = pd.DataFrame(data)
-        return df.to_csv(index=False)
-    except Exception as e:
-        return handle_http_error(e, "cbs_get_table_structure")
-
-
-async def cbs_get_dataset_metadata(ctx: Context, params: DatasetIdInput) -> str:
-    """
-    Gets metadata and classification links for a dataset.
-
-    Args:
-        params: DatasetIdInput containing:
-            - dataset_id (str): Dataset ID (e.g., '85313NED')
-
-    Returns:
-        str: JSON string containing dataset metadata and available endpoints
-    """
-    try:
-        dataset_id = validate_dataset_id(params.dataset_id)
-    except ValidationError as e:
-        return e.to_error_string()
-
-    url = f"{settings.data_base_url}/{dataset_id}"
-    ctx.info(f"Getting metadata for dataset {dataset_id}: {url}")
-    logger.info(f"Getting dataset metadata: {dataset_id}")
-
-    try:
-        response = await fetch_with_retry(url)
-        data = response.json()
-        return json.dumps(data, indent=2)
-    except Exception as e:
-        return handle_http_error(e, "cbs_get_dataset_metadata")
-
-
-async def cbs_query_dataset_metadata(ctx: Context, params: QueryMetadataInput) -> str:
-    """
-    Queries specific metadata endpoint for a dataset.
-
-    Args:
-        params: QueryMetadataInput containing:
-            - dataset_id (str): Dataset ID (e.g., '85313NED')
-            - metadata_name (str): Metadata type (e.g., 'DataProperties', 'Geslacht')
-
-    Returns:
-        str: JSON string containing the requested metadata
-    """
-    try:
-        dataset_id = validate_dataset_id(params.dataset_id)
-    except ValidationError as e:
-        return e.to_error_string()
-
-    url = f"{settings.data_base_url}/{dataset_id}/{params.metadata_name}"
-    ctx.info(f"Querying metadata for dataset {dataset_id}: {url}")
-    logger.info(f"Querying dataset metadata: {dataset_id}/{params.metadata_name}")
-
-    try:
-        response = await fetch_with_retry(url)
-        data = response.json()
-        return json.dumps(data, indent=2)
-    except Exception as e:
-        return handle_http_error(e, "cbs_query_dataset_metadata")
-
-
 async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
     """
-    Unified tool to get dataset metadata. Consolidates info, structure, and endpoints retrieval.
+    Unified tool to get dataset metadata. Handles all metadata retrieval needs.
 
     Args:
         params: GetMetadataInput containing:
@@ -145,16 +26,28 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
                 - 'info': Dataset description and details (TableInfos)
                 - 'structure': Column definitions and types (DataProperties)
                 - 'endpoints': Available metadata endpoints
-                - 'custom': Custom endpoint (specify custom_endpoint)
-            - custom_endpoint (str, optional): Custom endpoint name for metadata_type='custom'
+                - 'dimensions': Dimension values with codes for filtering (requires endpoint_name)
+                - 'custom': Custom endpoint query (requires endpoint_name)
+            - endpoint_name (str, optional): Required for 'dimensions' and 'custom' types
+              (e.g., 'Geslacht', 'Perioden', 'Luchthavens')
 
     Returns:
-        str: CSV for info/structure, JSON for endpoints/custom
+        str: CSV for info/structure/dimensions, JSON for endpoints/custom
 
-    Example:
+    Examples:
         - Get dataset info: metadata_type="info"
         - Get columns: metadata_type="structure"
-        - Get gender categories: metadata_type="custom", custom_endpoint="Geslacht"
+        - Get dimension codes: metadata_type="dimensions", endpoint_name="Geslacht"
+        - Get raw endpoint: metadata_type="custom", endpoint_name="CategoryGroups"
+
+    IMPORTANT - Dimension Values:
+        Use metadata_type="dimensions" to find codes for OData filtering.
+        CBS datasets use coded values (e.g., 'A043591') that map to
+        human-readable names (e.g., 'Eindhoven Airport').
+
+        Example workflow:
+        1. Get dimensions: metadata_type="dimensions", endpoint_name="Luchthavens"
+        2. Use code in filter: filter="Luchthavens eq 'A043591'"
     """
     try:
         dataset_id = validate_dataset_id(params.dataset_id)
@@ -163,84 +56,66 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
 
     logger.info(f"Getting metadata: dataset={dataset_id}, type={params.metadata_type}")
 
-    # Build URL based on metadata type
+    # Build URL and determine output format based on metadata type
     if params.metadata_type == MetadataType.INFO:
         url = f"{settings.data_base_url}/{dataset_id}/TableInfos?$format=json"
-        return_csv = True
+        return await _fetch_csv_metadata(ctx, url, "info")
+
     elif params.metadata_type == MetadataType.STRUCTURE:
         url = f"{settings.data_base_url}/{dataset_id}/DataProperties?$format=json"
-        return_csv = True
+        return await _fetch_csv_metadata(ctx, url, "structure")
+
     elif params.metadata_type == MetadataType.ENDPOINTS:
         url = f"{settings.data_base_url}/{dataset_id}"
-        return_csv = False
+        return await _fetch_json_metadata(ctx, url)
+
+    elif params.metadata_type == MetadataType.DIMENSIONS:
+        if not params.endpoint_name:
+            return "Error: endpoint_name is required when metadata_type='dimensions' (e.g., 'Geslacht', 'Perioden')"
+        return await _fetch_dimension_values(ctx, dataset_id, params.endpoint_name)
+
     elif params.metadata_type == MetadataType.CUSTOM:
-        if not params.custom_endpoint:
-            return "Error: custom_endpoint is required when metadata_type='custom'"
-        url = f"{settings.data_base_url}/{dataset_id}/{params.custom_endpoint}"
-        return_csv = False
+        if not params.endpoint_name:
+            return "Error: endpoint_name is required when metadata_type='custom'"
+        url = f"{settings.data_base_url}/{dataset_id}/{params.endpoint_name}"
+        return await _fetch_json_metadata(ctx, url)
+
     else:
         return f"Error: Unknown metadata type: {params.metadata_type}"
 
-    ctx.info(f"Fetching metadata from: {url}")
 
+async def _fetch_csv_metadata(ctx: Context, url: str, metadata_type: str) -> str:
+    """Fetch metadata and return as CSV."""
+    ctx.info(f"Fetching {metadata_type} metadata from: {url}")
     try:
         response = await fetch_with_retry(url)
         data = response.json()
-
-        if return_csv:
-            records = data.get('value', [])
-            if not records:
-                return "No metadata found."
-            df = pd.DataFrame(records)
-            return df.to_csv(index=False)
-        else:
-            return json.dumps(data, indent=2)
-
+        records = data.get('value', [])
+        if not records:
+            return f"No {metadata_type} metadata found."
+        df = pd.DataFrame(records)
+        return df.to_csv(index=False)
     except Exception as e:
         return handle_http_error(e, "cbs_get_metadata")
 
 
-async def cbs_get_dimension_values(ctx: Context, params: DimensionLookupInput) -> str:
-    """
-    Gets all possible values for a dimension with their codes and descriptions.
-
-    Use this tool to find the correct codes for OData filtering. CBS datasets use
-    coded values (e.g., 'A043591') that map to human-readable names (e.g., 'Eindhoven Airport').
-
-    Args:
-        params: DimensionLookupInput containing:
-            - dataset_id (str): Dataset ID (e.g., '37478hvv')
-            - dimension_name (str): Dimension name from DataProperties (e.g., 'Luchthavens', 'Geslacht', 'Perioden')
-
-    Returns:
-        str: Table of dimension values with Code, Title, and Description columns.
-             Use the 'Code' (Key) column values for OData filters.
-
-    Example:
-        Input: dataset_id="37478hvv", dimension_name="Luchthavens"
-        Output:
-            Code       | Title                    | Description
-            -----------|--------------------------|-------------
-            A043591    | Eindhoven Airport        |
-            A043590    | Amsterdam Airport Schiphol|
-
-        Then use in filter: filter="Luchthavens eq 'A043591'"
-
-    Common dimension names:
-        - Geslacht: Gender (Mannen, Vrouwen, Totaal)
-        - Perioden: Time periods (2023JJ00 = year, 2023MM01 = month)
-        - RegioS: Regions
-        - Leeftijd: Age groups
-    """
+async def _fetch_json_metadata(ctx: Context, url: str) -> str:
+    """Fetch metadata and return as JSON."""
+    ctx.info(f"Fetching metadata from: {url}")
     try:
-        dataset_id = validate_dataset_id(params.dataset_id)
-    except ValidationError as e:
-        return e.to_error_string()
+        response = await fetch_with_retry(url)
+        data = response.json()
+        return json.dumps(data, indent=2)
+    except Exception as e:
+        return handle_http_error(e, "cbs_get_metadata")
 
-    dimension_name = params.dimension_name.strip()
-    if not dimension_name:
-        return "Error: dimension_name cannot be empty"
 
+async def _fetch_dimension_values(ctx: Context, dataset_id: str, dimension_name: str) -> str:
+    """
+    Fetch dimension values with codes for OData filtering.
+    Returns a formatted table with Code, Title, Description.
+    """
+    dimension_name = dimension_name.strip()
     url = f"{settings.data_base_url}/{dataset_id}/{dimension_name}?$format=json"
     ctx.info(f"Getting dimension values for {dataset_id}/{dimension_name}")
     logger.info(f"Getting dimension values: {dataset_id}/{dimension_name}")
@@ -256,7 +131,7 @@ async def cbs_get_dimension_values(ctx: Context, params: DimensionLookupInput) -
             records = data
 
         if not records:
-            return f"No values found for dimension '{dimension_name}'. Check the dimension name using cbs_get_metadata with metadata_type='structure'."
+            return f"No values found for dimension '{dimension_name}'.\n\nTIP: Use metadata_type='structure' to see available dimensions (look for Type='Dimension')."
 
         # Extract relevant columns
         output_records = []
@@ -264,26 +139,22 @@ async def cbs_get_dimension_values(ctx: Context, params: DimensionLookupInput) -
             output_records.append({
                 'Code': r.get('Key', r.get('Identifier', '')),
                 'Title': r.get('Title', ''),
-                'Description': r.get('Description', '')[:100] if r.get('Description') else ''
+                'Description': (r.get('Description', '') or '')[:80]
             })
 
         df = pd.DataFrame(output_records)
 
-        # Format output
+        # Compact format output
         header = [
-            f"DIMENSION VALUES: {dimension_name}",
-            f"Dataset: {dataset_id}",
-            f"Total values: {len(df)}",
-            "-" * 60,
-            "",
-            "Use 'Code' values for OData filters: filter=\"{dim} eq '{code}'\"",
-            "",
+            f"DIMENSION: {dimension_name} ({len(df)} values)",
+            f"Use Code in filter: {dimension_name} eq '<Code>'",
+            "-" * 50,
         ]
 
-        return "\n".join(header) + df.to_string(index=False)
+        return "\n".join(header) + "\n" + df.to_string(index=False)
 
     except Exception as e:
         error_msg = str(e)
         if "404" in error_msg or "Not Found" in error_msg:
-            return f"Dimension '{dimension_name}' not found in dataset '{dataset_id}'.\n\nTIP: Use cbs_get_metadata with metadata_type='structure' to see available dimensions (look for Type='Dimension')."
-        return handle_http_error(e, "cbs_get_dimension_values")
+            return f"Dimension '{dimension_name}' not found.\n\nTIP: Use metadata_type='structure' to see available dimensions."
+        return handle_http_error(e, "cbs_get_metadata")

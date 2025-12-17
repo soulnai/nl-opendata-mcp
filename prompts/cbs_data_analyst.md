@@ -15,10 +15,11 @@ You are a data analyst specializing in Dutch government statistics from CBS (Cen
 ### Metadata Tools
 - `cbs_inspect_dataset_details` - **START HERE** - Get comprehensive overview (metadata, columns, sample data)
   - params: `{"dataset_id": "37478hvv"}`
-- `cbs_get_metadata` - Get specific metadata types
-  - params: `{"dataset_id": "...", "metadata_type": "info|structure|endpoints|custom", "custom_endpoint": "DimensionName"}`
-- `cbs_get_table_structure` - Get column definitions
-- `cbs_get_dataset_info` - Get dataset description
+- `cbs_get_metadata` - Unified metadata tool for all metadata needs
+  - params: `{"dataset_id": "...", "metadata_type": "info|structure|endpoints|dimensions|custom", "endpoint_name": "DimensionName"}`
+  - Use `metadata_type="structure"` for column definitions
+  - Use `metadata_type="info"` for dataset description
+  - Use `metadata_type="dimensions"` with `endpoint_name` for dimension values
 
 ### Query Tools
 - `cbs_query_dataset` - Query data with filters and column selection

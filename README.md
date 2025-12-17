@@ -126,18 +126,21 @@ TRANSPORT=sse uvx nl-opendata-mcp
 
 | Tool | Description |
 |------|-------------|
-| `cbs_get_dataset_info` | Get detailed dataset information (TableInfos) |
-| `cbs_get_table_structure` | Get column definitions and data types (DataProperties) |
-| `cbs_get_dataset_metadata` | Get metadata and classification links |
-| `cbs_query_dataset_metadata` | Query specific metadata endpoints (e.g., 'Geslacht', 'Perioden') |
+| `cbs_get_metadata` | Unified metadata tool - get info, structure, dimension values, or custom endpoints |
+
+**`cbs_get_metadata` types:**
+- `metadata_type="info"` - Dataset description (TableInfos)
+- `metadata_type="structure"` - Column definitions and data types (DataProperties)
+- `metadata_type="endpoints"` - Available metadata endpoints
+- `metadata_type="dimensions"` - Dimension values with codes for filtering (requires `endpoint_name`)
+- `metadata_type="custom"` - Query custom endpoint (requires `endpoint_name`)
 
 ### Data Fetching Tools
 
 | Tool | Description |
 |------|-------------|
 | `cbs_query_dataset` | Query data with filtering and column selection |
-| `cbs_save_dataset` | Save dataset to a CSV file |
-| `cbs_fetch_full_dataset` | Fetch complete dataset with auto-pagination (CSV/Parquet) |
+| `cbs_save_dataset` | Save dataset to CSV (use `fetch_all=True` for complete dataset) |
 | `cbs_save_dataset_to_duckdb` | Save dataset to DuckDB for SQL queries |
 
 ### Analysis Tools (disabled by default)
@@ -195,7 +198,7 @@ Use cbs_estimate_dataset_size with dataset_id="85313NED"
 
 **Get detailed column structure:**
 ```
-Use cbs_get_table_structure with dataset_id="85313NED"
+Use cbs_get_metadata with dataset_id="85313NED" and metadata_type="structure"
 
 # Returns CSV with: Key, Type, Title, Description for each column
 ```
@@ -239,24 +242,15 @@ Use cbs_query_dataset with:
 
 ### 4. Downloading Full Datasets
 
-**Fetch and auto-save large dataset:**
+**Save complete dataset to CSV:**
 ```
-Use cbs_fetch_full_dataset with:
+Use cbs_save_dataset with:
   - dataset_id="85313NED"
-  - save_path="population_data.csv"
-  - format="csv"
+  - file_name="population_data.csv"
+  - fetch_all=true
 ```
 
-**Fetch only specific columns (reduces download size):**
-```
-Use cbs_fetch_full_dataset with:
-  - dataset_id="85313NED"
-  - select=["Perioden", "TotaleBevolking_1"]
-  - save_path="population_summary.parquet"
-  - format="parquet"
-```
-
-**Save to DuckDB for SQL analysis:**
+**Save to DuckDB for SQL analysis (supports column selection):**
 ```
 Use cbs_save_dataset_to_duckdb with:
   - dataset_id="85313NED"
@@ -310,16 +304,18 @@ Use cbs_analyze_local_dataset with:
 
 **Get classification codes (e.g., gender categories):**
 ```
-Use cbs_query_dataset_metadata with:
+Use cbs_get_metadata with:
   - dataset_id="85313NED"
-  - metadata_name="Geslacht"
+  - metadata_type="dimensions"
+  - endpoint_name="Geslacht"
 ```
 
 **Get time period definitions:**
 ```
-Use cbs_query_dataset_metadata with:
+Use cbs_get_metadata with:
   - dataset_id="85313NED"
-  - metadata_name="Perioden"
+  - metadata_type="dimensions"
+  - endpoint_name="Perioden"
 ```
 
 ---
@@ -345,10 +341,10 @@ Use cbs_query_dataset_metadata with:
 ### Workflow 3: Filtered Data Export
 
 ```plaintext
-1. cbs_get_table_structure(dataset_id="85313NED")         # Get column names
-2. cbs_query_dataset_metadata(dataset_id="85313NED", metadata_name="Perioden")  # Get period codes
+1. cbs_get_metadata(dataset_id="85313NED", metadata_type="structure")  # Get column names
+2. cbs_get_metadata(dataset_id="85313NED", metadata_type="dimensions", endpoint_name="Perioden")  # Get period codes
 3. cbs_query_dataset(dataset_id="85313NED", filter="Perioden eq '2023JJ00'", select=["..."])  # Query
-4. cbs_save_dataset(dataset_id="85313NED", path="filtered_data.csv", ...)  # Export
+4. cbs_save_dataset(dataset_id="85313NED", file_name="filtered_data.csv")  # Export
 ```
 
 ---
@@ -358,7 +354,6 @@ Use cbs_query_dataset_metadata with:
 | Format | Use Case |
 |--------|----------|
 | **CSV** | Universal compatibility, works with Excel, Pandas, etc. |
-| **Parquet** | Efficient storage, faster loading in Python/DuckDB |
 | **DuckDB** | SQL queries, joins across multiple datasets |
 
 ---

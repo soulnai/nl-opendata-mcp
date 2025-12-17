@@ -18,8 +18,9 @@ from nl_opendata_mcp.models import (
     SaveDatasetInput,
     SaveToDuckDBInput,
     AnalyzeRemoteInput,
-    QueryMetadataInput,
     QueryDatasetInput,
+    GetMetadataInput,
+    MetadataType,
 )
 from nl_opendata_mcp.config import get_settings
 from nl_opendata_mcp.services.cache import catalog_cache, dataset_cache
@@ -84,10 +85,10 @@ async def test_estimate_dataset_size():
     print(result)
 
 
-async def test_get_dataset_info():
-    print("\nTesting cbs_get_dataset_info...")
-    fn = get_fn(server.cbs_get_dataset_info)
-    params = DatasetIdInput(dataset_id="85313NED")
+async def test_get_metadata():
+    print("\nTesting cbs_get_metadata (unified)...")
+    fn = get_fn(server.cbs_get_metadata)
+    params = GetMetadataInput(dataset_id="85313NED", metadata_type=MetadataType.INFO)
     result = await fn(ctx, params)
     print("Success! Result length:", len(result))
     print("Preview:", result[:100].replace('\n', ' '))
@@ -153,11 +154,11 @@ async def test_save_dataset_to_duckdb():
     fn = get_fn(server.cbs_save_dataset_to_duckdb)
     db_path = "datasets.db"  # Using default db path from server
     table_name = "education_test"
-    
+
     params = SaveToDuckDBInput(dataset_id="85313NED", table_name=table_name, fetch_all=False)
     result = await fn(ctx, params)
     print("Success!", result)
-    
+
     if os.path.exists(db_path):
         con = duckdb.connect(db_path)
         tables = con.execute("SHOW TABLES").fetchall()
@@ -169,45 +170,12 @@ async def test_save_dataset_to_duckdb():
         print("  Cleaned up test database")
 
 
-async def test_get_table_structure():
-    print("\nTesting cbs_get_table_structure...")
-    fn = get_fn(server.cbs_get_table_structure)
-    params = DatasetIdInput(dataset_id="85313NED")
-    result = await fn(ctx, params)
-    print("Success! Result length:", len(result))
-    print("Preview:", result[:100].replace('\n', ' '))
-
-
 async def test_query_dataset():
     print("\nTesting cbs_query_dataset...")
     fn = get_fn(server.cbs_query_dataset)
     params = QueryDatasetInput(dataset_id="85313NED", top=2)
     result = await fn(ctx, params)
     print("Success!", result[:200] if len(result) > 200 else result)
-
-
-async def test_get_dataset_metadata():
-    print("\nTesting cbs_get_dataset_metadata...")
-    fn = get_fn(server.cbs_get_dataset_metadata)
-    params = DatasetIdInput(dataset_id="85313NED")
-    result = await fn(ctx, params)
-    try:
-        data = json.loads(result)
-        print("Success! Got metadata for:", data['odata.metadata'])
-    except json.JSONDecodeError:
-        print("Failed to decode JSON:", result)
-
-
-async def test_query_dataset_metadata():
-    print("\nTesting cbs_query_dataset_metadata...")
-    fn = get_fn(server.cbs_query_dataset_metadata)
-    params = QueryMetadataInput(dataset_id="85313NED", metadata_name="DataProperties")
-    result = await fn(ctx, params)
-    try:
-        data = json.loads(result)
-        print("Success! Got metadata for:", data['odata.metadata'])
-    except json.JSONDecodeError:
-        print("Failed to decode JSON:", result)
 
 
 async def test_analyze_dataset():
@@ -238,29 +206,26 @@ async def run_all_tests():
     print("=" * 60)
     print("RUNNING ALL TESTS")
     print("=" * 60)
-    
+
     # Core functionality tests
     await test_list_datasets()
     await test_search_datasets()
-    
+
     print("\n--- Re-running search to test cache ---")
     await test_search_datasets()
-    
+
     await test_search_datasets_with_field()
     await test_estimate_dataset_size()
-    await test_get_dataset_info()
-    await test_get_table_structure()
+    await test_get_metadata()
     await test_query_dataset()
-    await test_get_dataset_metadata()
-    await test_query_dataset_metadata()
     await test_analyze_dataset()
     test_generate_odata_filter()
-    
+
     # New tests for save functionality
     await test_save_dataset()
     await test_save_dataset_cache()
     await test_save_dataset_to_duckdb()
-    
+
     print("\n" + "=" * 60)
     print("ALL TESTS COMPLETED")
     print("=" * 60)

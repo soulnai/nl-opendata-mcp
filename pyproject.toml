@@ -1,6 +1,6 @@
 [project]
 name = "nl-opendata-mcp"
-version = "0.4.3"
+version = "0.1.1"
 description = "MCP Server for Dutch government open data (CBS, data.overheid.nl)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,6 +26,11 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-settings>=2.0.0",
     "seaborn>=0.13.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
     "pytest-asyncio>=1.3.0",
 ]
 
@@ -49,3 +54,16 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+
+[dependency-groups]
+dev = [
+    "python-semantic-release>=10.5.3",
+]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+build_command = "uv build"
+commit_message = "chore(release): {version} [skip ci]"
+upload_to_pypi = true
+upload_to_release = true

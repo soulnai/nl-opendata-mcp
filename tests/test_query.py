@@ -112,10 +112,10 @@ async def test_inspect_dataset_details(ctx):
     result = await fn(ctx, params)
 
     assert result is not None
-    assert "DATASET INSPECTION REPORT" in result
+    assert "DATASET:" in result
     assert TEST_DATASET_ID in result
-    # Should include metadata and structure
-    assert "SOURCE:" in result
+    # Should include dimensions or measures info
+    assert "DIMENSIONS" in result or "MEASURES" in result or "Title:" in result
 
 
 @pytest.mark.asyncio

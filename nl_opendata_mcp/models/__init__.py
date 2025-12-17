@@ -8,12 +8,10 @@ from .inputs import (
     SaveToDuckDBInput,
     AnalyzeRemoteInput,
     AnalyzeLocalInput,
-    QueryMetadataInput,
     QueryDatasetInput,
     OutputFormat,
     MetadataType,
     GetMetadataInput,
-    DimensionLookupInput,
 )
 
 __all__ = [
@@ -25,10 +23,8 @@ __all__ = [
     "SaveToDuckDBInput",
     "AnalyzeRemoteInput",
     "AnalyzeLocalInput",
-    "QueryMetadataInput",
     "QueryDatasetInput",
     "OutputFormat",
     "MetadataType",
     "GetMetadataInput",
-    "DimensionLookupInput",
 ]

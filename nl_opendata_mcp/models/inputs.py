@@ -83,13 +83,6 @@ class AnalyzeLocalInput(BaseModel):
     script_path: Optional[str] = Field(default=None, description="Path to a .py file containing the analysis code (preferred for complex analysis)")
 
 
-class QueryMetadataInput(BaseModel):
-    """Input model for querying dataset metadata."""
-    model_config = ConfigDict(str_strip_whitespace=True)
-    dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
-    metadata_name: str = Field(default="metadata", description="Metadata type (e.g., 'DataProperties', 'Geslacht')")
-
-
 class QueryDatasetInput(BaseModel):
     """Input model for querying datasets."""
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -107,19 +100,13 @@ class MetadataType(str, Enum):
     INFO = "info"           # TableInfos - dataset description
     STRUCTURE = "structure" # DataProperties - column definitions
     ENDPOINTS = "endpoints" # Root metadata - available endpoints
-    CUSTOM = "custom"       # Custom endpoint (use metadata_name)
+    DIMENSIONS = "dimensions"  # Dimension values with codes for filtering
+    CUSTOM = "custom"       # Custom endpoint (use endpoint_name)
 
 
 class GetMetadataInput(BaseModel):
     """Input model for unified metadata retrieval."""
     model_config = ConfigDict(str_strip_whitespace=True)
     dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
-    metadata_type: MetadataType = Field(default=MetadataType.INFO, description="Type of metadata: 'info', 'structure', 'endpoints', or 'custom'")
-    custom_endpoint: Optional[str] = Field(default=None, description="Custom metadata endpoint name (only used when metadata_type='custom')")
-
-
-class DimensionLookupInput(BaseModel):
-    """Input model for looking up dimension values."""
-    model_config = ConfigDict(str_strip_whitespace=True)
-    dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
-    dimension_name: str = Field(..., min_length=1, description="Dimension name (e.g., 'Geslacht', 'Perioden', 'RegioS')")
+    metadata_type: MetadataType = Field(default=MetadataType.INFO, description="Type of metadata: 'info', 'structure', 'endpoints', 'dimensions', or 'custom'")
+    endpoint_name: Optional[str] = Field(default=None, description="Endpoint/dimension name (required for 'dimensions' and 'custom' types, e.g., 'Geslacht', 'Perioden')")

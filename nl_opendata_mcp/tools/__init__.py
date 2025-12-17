@@ -5,10 +5,6 @@ from .discovery import (
     cbs_check_dataset_availability,
 )
 from .metadata import (
-    cbs_get_dataset_info,
-    cbs_get_table_structure,
-    cbs_get_dataset_metadata,
-    cbs_query_dataset_metadata,
     cbs_get_metadata,
 )
 from .query import (
@@ -32,10 +28,6 @@ __all__ = [
     "cbs_search_datasets",
     "cbs_check_dataset_availability",
     # Metadata
-    "cbs_get_dataset_info",
-    "cbs_get_table_structure",
-    "cbs_get_dataset_metadata",
-    "cbs_query_dataset_metadata",
     "cbs_get_metadata",
     # Query
     "cbs_query_dataset",

@@ -9,7 +9,7 @@ from importlib.metadata import version, PackageNotFoundError
 try:
     __version__ = version("nl-opendata-mcp")
 except PackageNotFoundError:
-    __version__ = "0.4.0"
+    __version__ = "0.4.8"
 
 from .config import Settings, get_settings
 

@@ -47,6 +47,7 @@ async def cbs_list_local_datasets(ctx: Context) -> str:
             size_kb = stat.st_size / 1024
             files.append({
                 'filename': f,
+                'full_path': os.abspath(full_path),
                 'size_kb': round(size_kb, 1),
                 'rows': _count_csv_rows(full_path)
             })
@@ -56,7 +57,7 @@ async def cbs_list_local_datasets(ctx: Context) -> str:
 
     output = []
     for f in sorted(files, key=lambda x: x['filename']):
-        output.append(f"{f['filename']} ({f['size_kb']} KB, ~{f['rows']} rows)")
+        output.append(f"{f['full_path']} ({f['size_kb']} KB, ~{f['rows']} rows)")
 
     return "\n".join(output)
 
@@ -256,13 +257,10 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
     """
     Analyzes a local CSV dataset using Python/Pandas code. Can create charts and save to files.
 
-    IMPORTANT: First use cbs_list_local_datasets to see available files!
-
     Args:
         params: AnalyzeLocalInput containing:
             - dataset_name (str): Filename in downloads folder (e.g., 'population.csv')
             - analysis_code (str): Python code to execute. Use print() for output.
-            - script_path (str, optional): Path to .py file (alternative to analysis_code)
 
     Available variables in your code:
         - df: pandas DataFrame with the CSV data
@@ -279,8 +277,6 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
 
         Chart Example:
         ```python
-        import matplotlib.pyplot as plt
-
         # Create chart
         df.plot(kind='bar', x='RegioS', y='Value')
         plt.title('My Chart')
@@ -309,10 +305,6 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
         })
         print(result)
         \"\"\"
-
-    Workflow:
-        1. First call cbs_list_local_datasets to see available files
-        2. Then call this tool with the exact filename
     """
     ctx.info(f"Loading data for analysis: {params.dataset_name}")
     logger.info(f"Analyzing local dataset: {params.dataset_name}")
@@ -334,15 +326,9 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
         ctx.info(f"Loaded {len(df)} rows, {len(df.columns)} columns. Executing analysis code...")
 
         code_to_exec = params.analysis_code
-        if params.script_path:
-            try:
-                with open(params.script_path, 'r') as f:
-                    code_to_exec = f.read()
-            except Exception as e:
-                return f"Error reading script file: {e}"
 
         if not code_to_exec:
-            return "Error: Neither analysis_code nor script_path provided."
+            return "Error: analysis_code not provided."
 
         try:
             import sys

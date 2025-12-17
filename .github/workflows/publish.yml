@@ -1,59 +1,70 @@
-name: Publish to PyPI
+name: Release
 
 on:
-  release:
-    types: [published]
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  check:
-    name: Check
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-          
       - name: Install uv
-        uses: astral-sh/setup-uv@v2
-        
+        uses: astral-sh/setup-uv@v4
+        with:
+            enable-cache: true
+            version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
       - name: Install dependencies
-        run: uv sync
-        
+        run: uv sync --all-extras --dev
+
       - name: Run tests
         run: uv run pytest
 
-  # build-n-publish:
-  #   name: Build and Publish to PyPI
-  #   needs: check
-  #   if: github.event_name == 'release' && github.event.action == 'published'
-  #   runs-on: ubuntu-latest
-  #   environment:
-  #     name: pypi
-  #     url: https://pypi.org/p/nl-opendata-mcp
-  #   permissions:
-  #     id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-  #     contents: read
-    
-  #   steps:
-  #     - uses: actions/checkout@v4
+  release:
+    name: Release
+    needs: tests
+    # Only run on push to main, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
       
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.10"
-          
-  #     - name: Install uv
-  #       uses: astral-sh/setup-uv@v2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Build package
-  #       run: uv build
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+            enable-cache: true
+            version: "latest"
 
-  #     - name: Publish package distributions to PyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Python Semantic Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            uv run semantic-release version
+            uv run semantic-release publish

@@ -158,8 +158,8 @@ class TestInspectEdgeCases:
         )
 
         result_upper = result.upper()
-        # Should have some structural info
-        assert "COLUMN" in result_upper or "STRUCTURE" in result_upper or "PROPERTIES" in result_upper
+        # Should have some structural info (dimensions, measures, or title)
+        assert "DIMENSIONS" in result_upper or "MEASURES" in result_upper or "TITLE" in result_upper
 
     @pytest.mark.asyncio
     async def test_inspect_nonexistent_dataset(self):
@@ -180,14 +180,14 @@ class TestInspectEdgeCases:
 class TestMetadataEdgeCases:
     @pytest.mark.asyncio
     async def test_get_metadata_for_valid_dataset(self):
-        """Should return metadata for valid dataset."""
-        from nl_opendata_mcp.tools.metadata import cbs_get_dataset_info
-        from nl_opendata_mcp.models import DatasetIdInput
+        """Should return metadata for valid dataset using unified tool."""
+        from nl_opendata_mcp.tools.metadata import cbs_get_metadata
+        from nl_opendata_mcp.models import GetMetadataInput, MetadataType
 
         ctx = MockContext()
-        result = await cbs_get_dataset_info(
+        result = await cbs_get_metadata(
             ctx,
-            DatasetIdInput(dataset_id="83765NED")
+            GetMetadataInput(dataset_id="83765NED", metadata_type=MetadataType.INFO)
         )
 
         # Should contain dataset info
@@ -195,15 +195,15 @@ class TestMetadataEdgeCases:
 
     @pytest.mark.asyncio
     async def test_query_metadata_endpoint(self):
-        """Should query specific metadata endpoints."""
-        from nl_opendata_mcp.tools.metadata import cbs_query_dataset_metadata
-        from nl_opendata_mcp.models import QueryMetadataInput
+        """Should query specific metadata endpoints using unified tool."""
+        from nl_opendata_mcp.tools.metadata import cbs_get_metadata
+        from nl_opendata_mcp.models import GetMetadataInput, MetadataType
 
         ctx = MockContext()
-        # Use WijkenEnBuurten which exists in 83765NED
-        result = await cbs_query_dataset_metadata(
+        # Use WijkenEnBuurten which exists in 83765NED via custom endpoint
+        result = await cbs_get_metadata(
             ctx,
-            QueryMetadataInput(dataset_id="83765NED", metadata_name="WijkenEnBuurten")
+            GetMetadataInput(dataset_id="83765NED", metadata_type=MetadataType.CUSTOM, endpoint_name="WijkenEnBuurten")
         )
 
         # Should return location data (Key and Title columns)
@@ -212,13 +212,13 @@ class TestMetadataEdgeCases:
     @pytest.mark.asyncio
     async def test_query_nonexistent_metadata_endpoint(self):
         """Should handle nonexistent metadata endpoint gracefully."""
-        from nl_opendata_mcp.tools.metadata import cbs_query_dataset_metadata
-        from nl_opendata_mcp.models import QueryMetadataInput
+        from nl_opendata_mcp.tools.metadata import cbs_get_metadata
+        from nl_opendata_mcp.models import GetMetadataInput, MetadataType
 
         ctx = MockContext()
-        result = await cbs_query_dataset_metadata(
+        result = await cbs_get_metadata(
             ctx,
-            QueryMetadataInput(dataset_id="83765NED", metadata_name="NonExistentEndpoint")
+            GetMetadataInput(dataset_id="83765NED", metadata_type=MetadataType.CUSTOM, endpoint_name="NonExistentEndpoint")
         )
 
         # Should return error message, not crash

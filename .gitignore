@@ -135,6 +135,7 @@ dmypy.json
 *.db
 *.csv
 *.parquet
+*_cache.json
 backup/
 
 # Claude
