@@ -1,6 +1,6 @@
 [project]
 name = "nl-opendata-mcp"
-version = "1.0.1"
+version = "1.0.2"
 description = "MCP Server for Dutch government open data (CBS, data.overheid.nl)"
 readme = "README.md"
 requires-python = ">=3.10"
