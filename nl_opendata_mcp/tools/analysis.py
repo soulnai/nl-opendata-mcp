@@ -47,7 +47,7 @@ async def cbs_list_local_datasets(ctx: Context) -> str:
             size_kb = stat.st_size / 1024
             files.append({
                 'filename': f,
-                'full_path': os.abspath(full_path),
+                'full_path': os.path.abspath(full_path),
                 'size_kb': round(size_kb, 1),
                 'rows': _count_csv_rows(full_path)
             })
