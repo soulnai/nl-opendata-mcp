@@ -264,7 +264,7 @@ Use cbs_save_dataset_to_duckdb with:
 
 ### 5. Analyzing Data
 
-**Note: Analysis tools are disabled by default. To enable them, set `NL_OPENDATA_MCP_USE_PYTHON_ANALYSIS=true` in the environment. It is security risk to let the model write and execute Python code on a client machine. Recommended for advanced users only. It's better to let the model query and save the data to a file, and let your CLI LLM coding tool to analyse it by writing and executing scripts. If you are running it in a non CLI environment (like LM Studio) and still want to give it the ability to analyse data, you can enable it by setting `NL_OPENDATA_MCP_USE_PYTHON_ANALYSIS=true` in the environment.**
+**Note: Analysis tools are disabled by default. To enable them, set `USE_PYTHON_ANALYSIS=true` in the environment. It is security risk to let the model write and execute Python code on a client machine. Recommended for advanced users only. It's better to let the model query and save the data to a file, and let your CLI LLM coding tool to analyse it by writing and executing scripts. If you are running it in a non CLI environment (like LM Studio) and still want to give it the ability to analyse data, you can enable it by setting `USE_PYTHON_ANALYSIS=true` in the environment.**
 
 **Analyze remote dataset with Pandas:**
 ```
