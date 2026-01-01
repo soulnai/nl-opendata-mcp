@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.4 (2026-01-01)
+
+### Bug Fixes
+
+- Correct variable name
+  ([`a918b27`](https://github.com/soulnai/nl-opendata-mcp/commit/a918b27a9da162e6752d8a6d8bed64d076b05f4c))
+
+
 ## v1.0.3 (2025-12-20)
 
 ### Bug Fixes
