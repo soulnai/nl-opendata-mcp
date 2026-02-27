@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.0 (2026-02-27)
+
+### Features
+
+- Fix missing parameter
+  ([`f6d1d18`](https://github.com/soulnai/nl-opendata-mcp/commit/f6d1d182a0ac47ddb61e45384235607373801f1f))
+
+
 ## v1.0.4 (2026-01-01)
 
 ### Bug Fixes
