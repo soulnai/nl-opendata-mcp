@@ -57,7 +57,7 @@ async def cbs_list_local_datasets(ctx: Context) -> str:
 
     output = []
     for f in sorted(files, key=lambda x: x['filename']):
-        output.append(f"{f['full_path']} ({f['size_kb']} KB, ~{f['rows']} rows)")
+        output.append(f"{f['filename']} ({f['size_kb']} KB, ~{f['rows']} rows)")
 
     return "\n".join(output)
 
@@ -259,7 +259,7 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
 
     Args:
         params: AnalyzeLocalInput containing:
-            - dataset_name (str): Filename in downloads folder (e.g., 'population.csv')
+            - dataset_name (str): Use full path to the folder where the dataset is saved.
             - analysis_code (str): Python code to execute. Use print() for output.
 
     Available variables in your code:
@@ -336,7 +336,13 @@ async def cbs_analyze_local_dataset(ctx: Context, params: AnalyzeLocalInput) -> 
             old_stdout = sys.stdout
             redirected_output = sys.stdout = StringIO()
 
-            exec(code_to_exec, local_env)
+            # Temporarily switch to downloads directory so relative paths work
+            cwd = os.getcwd()
+            try:
+                os.chdir(settings.downloads_path)
+                exec(code_to_exec, local_env)
+            finally:
+                os.chdir(cwd)
 
             sys.stdout = old_stdout
             output = redirected_output.getvalue()

@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Initialize FastMCP server
-mcp = FastMCP(name="cbs_mcp", include_fastmcp_meta=False)
+mcp = FastMCP(name="cbs_mcp")
 
 
 # ============================================================================
@@ -399,31 +399,39 @@ Return the dataset ID and key findings.
 @mcp.prompt()
 def generate_chart(dataset_id: str, chart_request: str) -> str:
     """Guide for creating charts/visualizations from CBS data."""
-    return f"""You are a data visualization expert.
-
-DATASET: {dataset_id}
+    return f"""DATASET: {dataset_id}
 REQUEST: "{chart_request}"
 
+CHART BEST PRACTICES:
+
+1. DATA CONSISTENCY
+   - Match title to actual data granularity (don't label "YoY" when showing quarters)
+   - Use continuous time series - no gaps unless explicitly noted
+   - One unit per axis - never mix percentages with absolute values
+
+2. SINGLE SCALE RULE
+   - One Y-axis scale per chart (avoid dual axes - they mislead)
+   - If comparing different units, use separate subplots or normalize data
+
+3. CLARITY
+   - Labels must match axis units (if Y-axis is "thousands", don't annotate with "%")
+   - Limit to 5-7 categories/bars for readability
+   - Use consistent colors: one meaning per color across the chart
+
+4. AGGREGATION
+   - For YoY comparisons: aggregate to annual data, not quarterly
+   - For trends: use line charts, not bar charts
+   - For comparisons: use bar charts with single time period
+
 WORKFLOW:
-1. Use cbs_inspect_dataset_details to understand the data
-2. Use cbs_analyze_remote_dataset with chart code
+1. cbs_inspect_dataset_details - understand available columns
+2. cbs_get_metadata(type="dimensions") - get filter codes
+3. cbs_analyze_remote_dataset - fetch, transform, and plot
 
-Chart code template:
-```python
-import matplotlib.pyplot as plt
-# Create your chart
-df.plot(kind='bar', x='Column1', y='Column2')
-plt.title('Title')
-plt.tight_layout()
-plt.savefig('chart.png', dpi=150, bbox_inches='tight')
-plt.close()
-print('Chart saved to chart.png')
-```
-
-RULES:
-1. ALWAYS use plt.savefig() - never plt.show()
-2. ALWAYS call plt.close() after saving
-3. Use descriptive filenames
+CODE RULES:
+- Use plt.savefig('chart.png', dpi=150, bbox_inches='tight')
+- Always call plt.close() after saving
+- Never use plt.show()
 """
 
 
