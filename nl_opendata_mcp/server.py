@@ -19,7 +19,6 @@ from nl_opendata_mcp.models import (
     SearchDatasetsInput,
     DatasetIdInput,
     SaveDatasetInput,
-    SaveToDuckDBInput,
     AnalyzeRemoteInput,
     AnalyzeLocalInput,
     QueryDatasetInput,
@@ -42,7 +41,6 @@ from nl_opendata_mcp.tools.query import (
 )
 from nl_opendata_mcp.tools.export import (
     cbs_save_dataset as _cbs_save_dataset,
-    cbs_save_dataset_to_duckdb as _cbs_save_dataset_to_duckdb,
 )
 from nl_opendata_mcp.tools.analysis import (
     cbs_analyze_remote_dataset as _cbs_analyze_remote_dataset,
@@ -257,27 +255,6 @@ async def cbs_save_dataset(ctx: Context, params: SaveDatasetInput) -> str:
         str: Success message with file path and record count
     """
     return await _cbs_save_dataset(ctx, params)
-
-
-@mcp.tool(
-    name="cbs_save_dataset_to_duckdb",
-    annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
-)
-async def cbs_save_dataset_to_duckdb(ctx: Context, params: SaveToDuckDBInput) -> str:
-    """
-    Saves a dataset to a DuckDB database for efficient querying.
-
-    Args:
-        params: SaveToDuckDBInput containing:
-            - dataset_id (str): Dataset ID (e.g., '85313NED')
-            - table_name (str, optional): Table name (default: dataset_id)
-            - fetch_all (bool): Fetch all records (default: True)
-            - select (List[str], optional): Column names to fetch
-
-    Returns:
-        str: Success message with database path, table name, and row count
-    """
-    return await _cbs_save_dataset_to_duckdb(ctx, params)
 
 
 # ============================================================================

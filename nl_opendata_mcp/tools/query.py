@@ -72,7 +72,7 @@ async def cbs_estimate_dataset_size(ctx: Context, params: DatasetIdInput) -> str
 
         if test_data:
             row_estimate = ">100,000 rows"
-            strategy = "LARGE: Use cbs_save_dataset_to_duckdb() or cbs_save_dataset(fetch_all=True) with select parameter"
+            strategy = "LARGE: Use cbs_save_dataset(fetch_all=True) with select parameter"
         else:
             test_url = f"{settings.data_base_url}/{dataset_id}/TypedDataSet?$format=json&$top=1&$skip=10000"
             test_resp = await client.get(test_url)

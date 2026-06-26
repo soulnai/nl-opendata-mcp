@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    # Nightly run of the live CBS API integration tests (06:17 UTC).
+    - cron: "17 6 * * *"
+  workflow_dispatch:
 
 jobs:
   tests:
@@ -29,8 +33,36 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Run offline tests
+        # Live CBS API tests are excluded here: CBS rate-limits CI runner IPs,
+        # making them non-deterministic. They run in the live-tests job instead.
+        run: uv run pytest -m "not live"
+
+  live-tests:
+    name: Live API tests
+    # Hits the real CBS OData API. Not a release gate (CBS rate-limits CI IPs),
+    # so this runs on a nightly schedule or manual dispatch only.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+            enable-cache: true
+            version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run live API tests
+        run: uv run pytest -m live
 
   release:
     name: Release

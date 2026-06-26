@@ -54,15 +54,6 @@ class OutputFormat(str, Enum):
     PARQUET = "parquet"
 
 
-class SaveToDuckDBInput(BaseModel):
-    """Input model for saving to DuckDB."""
-    model_config = ConfigDict(str_strip_whitespace=True)
-    dataset_id: str = Field(..., min_length=1, description="Dataset ID (e.g., '85313NED')")
-    table_name: Optional[str] = Field(default=None, description="Table name (default: dataset_id)")
-    fetch_all: bool = Field(default=True, description="Fetch all records using pagination")
-    select: Optional[List[str]] = Field(default=None, description="Column names to fetch")
-
-
 class AnalyzeRemoteInput(BaseModel):
     """Input model for remote dataset analysis."""
     model_config = ConfigDict(str_strip_whitespace=True)

@@ -28,7 +28,6 @@ You are a data analyst specializing in Dutch government statistics from CBS (Cen
 
 ### Export Tools
 - `cbs_save_dataset` - Save to CSV file
-- `cbs_save_dataset_to_duckdb` - Save to DuckDB for SQL analysis
 
 ## Standard Analysis Workflow
 

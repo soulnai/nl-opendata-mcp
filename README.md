@@ -16,7 +16,6 @@ For local models I got the best results using the Devstral2 small model with gpt
 - **📊 Access 4800+ CBS Datasets** - Browse and query statistical data on population, economy, health, environment, and more
 - **🔍 Smart Search** - Search datasets by title, summary, or both with local caching for fast results
 - **📥 Flexible Data Fetching** - Query, filter, and download datasets in CSV or Parquet format
-- **🦆 DuckDB Integration** - Save datasets directly to DuckDB for efficient SQL querying
 - **🐍 Python Analysis** - Execute Pandas code directly on datasets without downloading
 - **🗂️ Dual Source Support** - Check availability across CBS OData and data.overheid.nl
 
@@ -141,7 +140,6 @@ TRANSPORT=sse uvx nl-opendata-mcp
 |------|-------------|
 | `cbs_query_dataset` | Query data with filtering and column selection |
 | `cbs_save_dataset` | Save dataset to CSV (use `fetch_all=True` for complete dataset) |
-| `cbs_save_dataset_to_duckdb` | Save dataset to DuckDB for SQL queries |
 
 ### Analysis Tools (disabled by default)
 
@@ -250,16 +248,6 @@ Use cbs_save_dataset with:
   - fetch_all=true
 ```
 
-**Save to DuckDB for SQL analysis (supports column selection):**
-```
-Use cbs_save_dataset_to_duckdb with:
-  - dataset_id="85313NED"
-  - table_name="population"
-  - fetch_all=true
-
-# Creates datasets.db with table 'population'
-```
-
 ---
 
 ### 5. Analyzing Data
@@ -333,9 +321,9 @@ Use cbs_get_metadata with:
 ### Workflow 2: Full Dataset Analysis
 
 ```plaintext
-1. cbs_estimate_dataset_size(dataset_id="85313NED")       # Check size
-2. cbs_save_dataset_to_duckdb(dataset_id="85313NED")      # Save to DuckDB
-3. Query using DuckDB CLI or cbs_analyze_local_dataset
+1. cbs_estimate_dataset_size(dataset_id="85313NED")           # Check size
+2. cbs_save_dataset(dataset_id="85313NED", fetch_all=True)    # Save full dataset to CSV
+3. cbs_analyze_local_dataset(...)                            # Analyze locally with Pandas
 ```
 
 ### Workflow 3: Filtered Data Export
@@ -354,7 +342,6 @@ Use cbs_get_metadata with:
 | Format | Use Case |
 |--------|----------|
 | **CSV** | Universal compatibility, works with Excel, Pandas, etc. |
-| **DuckDB** | SQL queries, joins across multiple datasets |
 
 ---
 

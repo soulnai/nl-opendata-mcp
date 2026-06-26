@@ -21,7 +21,6 @@ classifiers = [
 dependencies = [
     "pandas",
     "fastmcp>=2.13.2",
-    "duckdb",
     "httpx[http2]>=0.28.1",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.0.0",
@@ -48,6 +47,9 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+markers = [
+    "live: tests that make live HTTP calls to the CBS OData API. Non-deterministic in CI (CBS rate-limits runner IPs); deselect with -m 'not live'.",
+]
 
 [dependency-groups]
 dev = [

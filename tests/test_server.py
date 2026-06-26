@@ -1,12 +1,12 @@
 """
 Test suite for the overheid-mcp server.
-Tests all tools including the new DuckDB and full dataset features.
+Tests all tools and full dataset features.
 Updated to work with async tools and Pydantic input models.
 """
 import asyncio
 import json
 import os
-import duckdb
+import pytest
 
 # Import the server module to access tools and input models
 from nl_opendata_mcp import server
@@ -16,7 +16,6 @@ from nl_opendata_mcp.models import (
     SearchField,
     DatasetIdInput,
     SaveDatasetInput,
-    SaveToDuckDBInput,
     AnalyzeRemoteInput,
     QueryDatasetInput,
     GetMetadataInput,
@@ -24,6 +23,9 @@ from nl_opendata_mcp.models import (
 )
 from nl_opendata_mcp.config import get_settings
 from nl_opendata_mcp.services.cache import catalog_cache, dataset_cache
+
+# Every test in this module makes live HTTP calls to the CBS OData API.
+pytestmark = pytest.mark.live
 
 # Base URL for direct API testing
 DATA_BASE_URL = "https://opendata.cbs.nl/ODataFeed/OData"
@@ -149,27 +151,6 @@ async def test_save_dataset_cache():
     print("  Cleaned up test file and cache")
 
 
-async def test_save_dataset_to_duckdb():
-    print("\nTesting cbs_save_dataset_to_duckdb...")
-    fn = get_fn(server.cbs_save_dataset_to_duckdb)
-    db_path = "datasets.db"  # Using default db path from server
-    table_name = "education_test"
-
-    params = SaveToDuckDBInput(dataset_id="85313NED", table_name=table_name, fetch_all=False)
-    result = await fn(ctx, params)
-    print("Success!", result)
-
-    if os.path.exists(db_path):
-        con = duckdb.connect(db_path)
-        tables = con.execute("SHOW TABLES").fetchall()
-        print(f"  Tables in DB: {tables}")
-        count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
-        print(f"  Rows in {table_name}: {count}")
-        con.close()
-        os.remove(db_path)
-        print("  Cleaned up test database")
-
-
 async def test_query_dataset():
     print("\nTesting cbs_query_dataset...")
     fn = get_fn(server.cbs_query_dataset)
@@ -224,7 +205,6 @@ async def run_all_tests():
     # New tests for save functionality
     await test_save_dataset()
     await test_save_dataset_cache()
-    await test_save_dataset_to_duckdb()
 
     print("\n" + "=" * 60)
     print("ALL TESTS COMPLETED")

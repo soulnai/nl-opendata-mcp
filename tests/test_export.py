@@ -1,5 +1,5 @@
 """
-Tests for dataset export tools (save to CSV, DuckDB).
+Tests for dataset export tools (save to CSV).
 """
 import pytest
 import sys
@@ -9,9 +9,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from nl_opendata_mcp import server
-from nl_opendata_mcp.models import SaveDatasetInput, SaveToDuckDBInput
+from nl_opendata_mcp.models import SaveDatasetInput
 from nl_opendata_mcp.config import get_settings
 from nl_opendata_mcp.services.cache import dataset_cache
+
+# Every test in this module makes live HTTP calls to the CBS OData API.
+pytestmark = pytest.mark.live
 
 
 class MockContext:
@@ -129,74 +132,3 @@ async def test_save_dataset_path_traversal_blocked(ctx, settings):
         if os.path.exists(safe_path):
             os.remove(safe_path)
         dataset_cache.remove(safe_path)
-
-
-@pytest.mark.asyncio
-async def test_save_to_duckdb(ctx, settings):
-    """Test saving dataset to DuckDB."""
-    import duckdb
-
-    fn = get_fn(server.cbs_save_dataset_to_duckdb)
-    db_path = settings.duckdb_path
-    table_name = "test_export_table"
-
-    try:
-        params = SaveToDuckDBInput(
-            dataset_id=TEST_DATASET_ID,
-            table_name=table_name,
-            fetch_all=False  # Just get first batch for speed
-        )
-        result = await fn(ctx, params)
-
-        assert "saved" in result.lower() or "error" in result.lower()
-
-        if "saved" in result.lower():
-            # Verify table exists
-            con = duckdb.connect(db_path)
-            tables = [t[0] for t in con.execute("SHOW TABLES").fetchall()]
-            assert table_name in tables
-
-            # Verify has rows
-            count = con.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
-            assert count > 0
-            con.close()
-    finally:
-        # Cleanup
-        if os.path.exists(db_path):
-            con = duckdb.connect(db_path)
-            try:
-                con.execute(f"DROP TABLE IF EXISTS {table_name}")
-            except:
-                pass
-            con.close()
-
-
-@pytest.mark.asyncio
-async def test_save_to_duckdb_with_select(ctx, settings):
-    """Test saving to DuckDB with column selection."""
-    import duckdb
-
-    fn = get_fn(server.cbs_save_dataset_to_duckdb)
-    db_path = settings.duckdb_path
-    table_name = "test_select_table"
-
-    try:
-        params = SaveToDuckDBInput(
-            dataset_id=TEST_DATASET_ID,
-            table_name=table_name,
-            fetch_all=False,
-            select=["ID"]
-        )
-        result = await fn(ctx, params)
-
-        # Should succeed or fail gracefully
-        assert result is not None
-    finally:
-        # Cleanup
-        if os.path.exists(db_path):
-            con = duckdb.connect(db_path)
-            try:
-                con.execute(f"DROP TABLE IF EXISTS {table_name}")
-            except:
-                pass
-            con.close()

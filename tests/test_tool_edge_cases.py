@@ -7,6 +7,9 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Every test in this module makes live HTTP calls to the CBS OData API.
+pytestmark = pytest.mark.live
+
 
 class MockContext:
     """Mock FastMCP context for testing."""

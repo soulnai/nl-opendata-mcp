@@ -14,7 +14,6 @@ from .query import (
 )
 from .export import (
     cbs_save_dataset,
-    cbs_save_dataset_to_duckdb,
 )
 from .analysis import (
     cbs_analyze_remote_dataset,
@@ -35,7 +34,6 @@ __all__ = [
     "cbs_inspect_dataset_details",
     # Export
     "cbs_save_dataset",
-    "cbs_save_dataset_to_duckdb",
     # Analysis
     "cbs_analyze_remote_dataset",
     "cbs_analyze_local_dataset",

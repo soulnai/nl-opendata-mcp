@@ -70,10 +70,6 @@ class Settings(BaseSettings):
         default="dataset_cache.json",
         description="Path to dataset cache file"
     )
-    duckdb_path: str = Field(
-        default="datasets.db",
-        description="Path to DuckDB database file"
-    )
 
     # Limits
     max_records_per_fetch: int = Field(
@@ -83,10 +79,6 @@ class Settings(BaseSettings):
     batch_size: int = Field(
         default=1000,
         description="Batch size for paginated fetches"
-    )
-    duckdb_batch_size: int = Field(
-        default=9000,
-        description="Batch size for DuckDB imports"
     )
 
     # Server

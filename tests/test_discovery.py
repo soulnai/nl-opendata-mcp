@@ -16,6 +16,9 @@ from nl_opendata_mcp.models import (
     DatasetIdInput,
 )
 
+# Every test in this module makes live HTTP calls to the CBS OData API.
+pytestmark = pytest.mark.live
+
 
 class MockContext:
     """Mock FastMCP context for testing."""
