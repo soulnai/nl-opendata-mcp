@@ -26,7 +26,7 @@ from nl_opendata_mcp.config import get_settings
 from nl_opendata_mcp.services.cache import catalog_cache, dataset_cache
 
 # Base URL for direct API testing
-DATA_BASE_URL = "https://opendata.cbs.nl/ODataApi/OData"
+DATA_BASE_URL = "https://opendata.cbs.nl/ODataFeed/OData"
 
 
 class MockContext:

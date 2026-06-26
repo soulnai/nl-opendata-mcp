@@ -18,7 +18,7 @@ Example:
     >>> from nl_opendata_mcp.config import get_settings
     >>> settings = get_settings()
     >>> print(settings.data_base_url)
-    'https://opendata.cbs.nl/ODataApi/OData'
+    'https://opendata.cbs.nl/ODataFeed/OData'
 """
 from pydantic_settings import BaseSettings
 from pydantic import Field
@@ -34,8 +34,13 @@ class Settings(BaseSettings):
         description="CBS OData Catalog base URL"
     )
     data_base_url: str = Field(
-        default="https://opendata.cbs.nl/ODataApi/OData",
-        description="CBS OData API base URL"
+        # ODataFeed (not ODataApi): CBS only supports the $skip query option on
+        # the ODataFeed endpoint. ODataApi returns HTTP 500 for any request with
+        # $skip ("The 'Skip' query option is not supported on the ODataApi").
+        # ODataFeed is a superset of ODataApi for our usage (same JSON shapes
+        # with $format=json) and additionally supports skip-based pagination.
+        default="https://opendata.cbs.nl/ODataFeed/OData",
+        description="CBS OData data base URL (ODataFeed; supports $skip pagination)"
     )
     ckan_base_url: str = Field(
         default="https://data.overheid.nl/data/api/3/action",

@@ -66,7 +66,8 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
         return await _fetch_csv_metadata(ctx, url, "structure")
 
     elif params.metadata_type == MetadataType.ENDPOINTS:
-        url = f"{settings.data_base_url}/{dataset_id}"
+        # $format=json is required: the ODataFeed root returns Atom XML by default.
+        url = f"{settings.data_base_url}/{dataset_id}?$format=json"
         return await _fetch_json_metadata(ctx, url)
 
     elif params.metadata_type == MetadataType.DIMENSIONS:
@@ -77,7 +78,8 @@ async def cbs_get_metadata(ctx: Context, params: GetMetadataInput) -> str:
     elif params.metadata_type == MetadataType.CUSTOM:
         if not params.endpoint_name:
             return "Error: endpoint_name is required when metadata_type='custom'"
-        url = f"{settings.data_base_url}/{dataset_id}/{params.endpoint_name}"
+        # $format=json is required: ODataFeed endpoints return Atom XML by default.
+        url = f"{settings.data_base_url}/{dataset_id}/{params.endpoint_name}?$format=json"
         return await _fetch_json_metadata(ctx, url)
 
     else:
