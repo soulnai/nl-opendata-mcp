@@ -64,8 +64,8 @@ Dimensions contain coded values. Get the mapping:
 ```
 cbs_get_metadata({
   "dataset_id": "DATASET_ID",
-  "metadata_type": "custom",
-  "custom_endpoint": "DimensionName"
+  "metadata_type": "dimensions",
+  "endpoint_name": "DimensionName"
 })
 ```
 
