@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.2 (2026-06-26)
+
+### Bug Fixes
+
+- Correct get_metadata call in analyst prompt
+  ([`6d6e7ad`](https://github.com/soulnai/nl-opendata-mcp/commit/6d6e7ad0ec2ddab08e22be4d97b1076903bce3f6))
+
+
 ## v1.1.1 (2026-06-26)
 
 ### Bug Fixes
