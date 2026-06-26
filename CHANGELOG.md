@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.1.1 (2026-06-26)
+
+### Bug Fixes
+
+- Use CBS ODataFeed endpoint so $skip pagination works
+  ([`4f1d084`](https://github.com/soulnai/nl-opendata-mcp/commit/4f1d08468cf089dce7370de44ca9deb79cd24118))
+
+### Refactoring
+
+- Remove unused DuckDB export and split live API tests in CI
+  ([`b932626`](https://github.com/soulnai/nl-opendata-mcp/commit/b9326268a13b2054a15bf7a68d3965486dbe89b5))
+
+
 ## v1.1.0 (2026-02-27)
 
 ### Features
